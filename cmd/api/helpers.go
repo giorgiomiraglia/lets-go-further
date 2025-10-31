@@ -45,13 +45,20 @@ func (app *application) writeJSON(w http.ResponseWriter, status int, data envelo
 	return nil
 }
 
-func (app *application) readJSON(r *http.Request, destination any) error {
-	err := json.NewDecoder(r.Body).Decode(destination)
+func (app *application) readJSON(w http.ResponseWriter, r *http.Request, destination any) error {
+	maxBytes := 1_048_576
+	r.Body = http.MaxBytesReader(w, r.Body, int64(maxBytes))
+
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+
+	err := dec.Decode(destination)
 	if err != nil {
 		var (
 			syntaxError           *json.SyntaxError
 			unmarshalTypeError    *json.UnmarshalTypeError
 			invalidUnmarshalError *json.InvalidUnmarshalError
+			requestTooLarge       *http.MaxBytesError
 		)
 
 		switch {
@@ -70,6 +77,9 @@ func (app *application) readJSON(r *http.Request, destination any) error {
 		case errors.Is(err, io.EOF):
 			return errors.New("body must not be empty")
 
+		case errors.As(err, &requestTooLarge):
+			return fmt.Errorf("body must not be larger than %d bytes", maxBytes)
+
 		// Case an unsupported value is passed to Decode()
 		case errors.As(err, &invalidUnmarshalError):
 			panic(err)
@@ -78,5 +88,12 @@ func (app *application) readJSON(r *http.Request, destination any) error {
 			return err
 		}
 	}
+
+	// Checks if exists additional data on the body of the request
+	err = dec.Decode(&struct{}{})
+	if err != io.EOF {
+		return errors.New("body must only contain a single JSON value")
+	}
+
 	return nil
 }
