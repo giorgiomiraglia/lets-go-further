@@ -8,7 +8,21 @@ import (
 )
 
 func (app *application) createMoviesHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Creates a new movie\n")
+
+	var input struct {
+		Title   string   `json:"title"`
+		Year    int32    `json:"year"`
+		Runtime int32    `json:"runtime"`
+		Genres  []string `json:"genres"`
+	}
+
+	err := app.readJSON(r, &input)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	fmt.Fprintf(w, "%+v\n", input)
 }
 
 func (app *application) showMoviesHandler(w http.ResponseWriter, r *http.Request) {
