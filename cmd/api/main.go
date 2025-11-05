@@ -28,7 +28,7 @@ type config struct {
 	}
 }
 
-// Holds the dependencies for our HTTP handlers, helpers and middleware.
+// Holds the dependencies for HTTP handlers, helpers and middleware.
 type application struct {
 	config config
 	logger *log.Logger
