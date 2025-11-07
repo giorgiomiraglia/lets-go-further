@@ -65,19 +65,19 @@ func (m MovieModel) Get(id int64) (*Movie, error) {
 
 	query := `
 		SELECT
-		id,
-		created_at, 
-		title, 
-		year, 
-		runtime, 
-		genres, 
-		version
+			id,
+			created_at, 
+			title, 
+			year, 
+			runtime, 
+			genres, 
+			version
 		FROM
-		movies
+			movies
 		WHERE
-		id = $1
+			id = $1
 		;
-		`
+	`
 
 	var movie Movie
 
