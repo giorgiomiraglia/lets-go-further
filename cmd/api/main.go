@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"greenlight/internal/data"
+	"greenlight/internal/jsonlog"
 	"log"
 	"net/http"
 	"os"
@@ -31,7 +32,7 @@ type config struct {
 // Holds the dependencies for HTTP handlers, helpers and middleware.
 type application struct {
 	config config
-	logger *log.Logger
+	logger *jsonlog.Logger
 	models data.Models
 }
 
@@ -46,15 +47,15 @@ func main() {
 	flag.StringVar(&cfg.db.maxIdleTime, "dm-max-idle-time", "15m", "PostgreSQL max connection idle time")
 	flag.Parse()
 
-	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
+	logger := jsonlog.New(os.Stdout, jsonlog.LevelInfo)
 
 	db, err := openDB(cfg)
 	if err != nil {
-		logger.Fatal(err)
+		logger.PrintError(err, nil)
 	}
 	defer db.Close()
 
-	logger.Printf("database connection pool established")
+	logger.PrintInfo("database connection pool established", nil)
 
 	app := &application{
 		config: cfg,
@@ -66,13 +67,14 @@ func main() {
 		Addr:         fmt.Sprintf(":%d", cfg.port),
 		Handler:      app.routes(),
 		IdleTimeout:  time.Minute,
+		ErrorLog:     log.New(logger, "", 0),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
 	}
 
-	logger.Printf("starting %s server on %s", cfg.env, srv.Addr)
+	logger.PrintInfo("starting %s server on %s", map[string]string{"env": cfg.env, "addr": srv.Addr})
 	err = srv.ListenAndServe()
-	logger.Fatal(err)
+	logger.PrintFatal(err, map[string]string{"env": cfg.env, "addr": srv.Addr})
 }
 
 // openDB() function returns a sql.DB connection pool.
