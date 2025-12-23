@@ -47,7 +47,7 @@ func (app *application) listMoviesHandlers(w http.ResponseWriter, r *http.Reques
 	// Validating input
 	input.Title = app.readString(qs, "title", "")
 
-	input.Genres = app.readCSV(qs, "genres", nil)
+	input.Genres = app.readCSV(qs, "genres", []string{})
 
 	input.Filters.Page = app.readInt(qs, "page", 1, v)
 	input.Filters.PageSize = app.readInt(qs, "page_size", 20, v)
@@ -62,7 +62,18 @@ func (app *application) listMoviesHandlers(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	fmt.Fprintf(w, "%+v\n", input)
+	// Maybe it is not the input, but a new Movie
+	metadata, movies, err := app.models.Movies.GetAll(input.Title, input.Genres, input.Filters)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"movies": movies, "metadata": metadata}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
 }
 
 func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Request) {
