@@ -45,11 +45,24 @@ func (app *application) serve() error {
 		// Gives the server up to 5s to clean-up,
 		// if everything goes well, nil is sent.
 		// Otherwise, sends a timeout error or any other error
-		shutdownError <- srv.Shutdown(ctx)
+		err := srv.Shutdown(ctx)
+		if err != nil {
+			shutdownError <- err
+		}
+
+		app.logger.PrintInfo(
+			"completing background tasks",
+			map[string]string{
+				"addr": srv.Addr,
+			})
+
+		// No errors, so will block until the WaitGroup decrements to zero
+		app.wg.Wait()
+		shutdownError <- nil
 	}()
 
 	app.logger.PrintInfo(
-		"starting %s server on %s",
+		"starting server",
 		map[string]string{
 			"addr": srv.Addr,
 			"env":  app.config.env,
