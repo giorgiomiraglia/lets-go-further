@@ -62,9 +62,11 @@ func (lg *Logger) print(level Level, msg string, properties map[string]string) (
 		Properties: properties,
 	}
 
-	if level > lg.minLevel {
+	if level >= LevelError {
 		aux.Trace = string(debug.Stack())
 	}
+
+	var line []byte
 
 	line, err := json.Marshal(aux)
 	if err != nil {
