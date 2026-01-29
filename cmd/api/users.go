@@ -51,6 +51,14 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	// Goroutine to send email in the background with panic recovering
+	app.background(func() {
+		err := app.mailer.Send(u.Email, "user_welcome.tmpl", u)
+		if err != nil {
+			app.logger.PrintError(err, nil)
+		}
+	})
+
 	err = app.writeJSON(w, http.StatusCreated, envelope{"user": u}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
