@@ -5,6 +5,7 @@ import (
 	"greenlight/internal/data"
 	"greenlight/internal/validator"
 	"net/http"
+	"time"
 )
 
 func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -51,9 +52,20 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	t, err := app.models.Tokens.New(u.ID, 3*24*time.Hour, data.ScopeActivation)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	data := map[string]any{
+		"userID":          u.ID,
+		"activationToken": t.PlainText,
+	}
+
 	// Goroutine to send email in the background with panic recovering
 	app.background(func() {
-		err := app.mailer.Send(u.Email, "user_welcome.tmpl", u)
+		err := app.mailer.Send(u.Email, "user_welcome.tmpl", data)
 		if err != nil {
 			app.logger.PrintError(err, nil)
 		}
@@ -64,5 +76,9 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		app.serverErrorResponse(w, r, err)
 		return
 	}
+
+}
+
+func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Request) {
 
 }
