@@ -107,5 +107,4 @@ func (m *TokenModel) DeleteForAllUsers(scope string, userID int64) error {
 func ValidateTokenPlainText(v *validator.Validator, token string) {
 	v.Check(token != "", "token", "must be provided")
 	v.Check(len(token) == 26, "token", "must be 26 bytes long")
-
 }
