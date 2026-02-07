@@ -213,6 +213,7 @@ func (m UserModel) Update(user *User) error {
 }
 
 func (m UserModel) GetForToken(scope, plainText string) (*User, error) {
+
 	tokenHash := sha256.Sum256([]byte(plainText))
 
 	query := `
