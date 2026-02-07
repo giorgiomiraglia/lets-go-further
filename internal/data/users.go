@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
 	"errors"
 	"greenlight/internal/validator"
@@ -147,7 +148,7 @@ func (m UserModel) GetByEmail(email string) (*User, error) {
 		&user.CreatedAt,
 		&user.Name,
 		&user.Email,
-		&user.Password,
+		&user.Password.hash,
 		&user.Activated,
 		&user.Version,
 	)
@@ -163,7 +164,7 @@ func (m UserModel) GetByEmail(email string) (*User, error) {
 	return &user, nil
 }
 
-func (m UserModel) Update(user *User) (*User, error) {
+func (m UserModel) Update(user *User) error {
 	query := `
 		UPDATE users SET
 			name = $1,
@@ -200,13 +201,66 @@ func (m UserModel) Update(user *User) (*User, error) {
 	if err != nil {
 		switch {
 		case err.Error() == `pq: duplicate key value violates unique constraint "users_email_key"`:
-			return nil, ErrDuplicatedEmail
+			return ErrDuplicatedEmail
 		case errors.Is(err, sql.ErrNoRows):
-			return nil, ErrEditConflict
+			return ErrEditConflict
+		default:
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m UserModel) GetForToken(scope, plainText string) (*User, error) {
+	tokenHash := sha256.Sum256([]byte(plainText))
+
+	query := `
+		SELECT 
+			u.id,
+			u.created_at,
+			u.name,
+			u.email,
+			u.password_hash,
+			u.activated,
+			u.version
+		FROM users u
+		INNER JOIN tokens t
+			ON u.id = t.user_id
+		WHERE t.hash = $1
+		AND t.scope = $2
+		AND t.expiry > $3
+	`
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	args := []any{
+		tokenHash[:],
+		scope,
+		time.Now(),
+	}
+
+	var u User
+	err := m.DB.QueryRowContext(
+		ctx,
+		query,
+		args...,
+	).Scan(
+		&u.ID,
+		&u.CreatedAt,
+		&u.Name,
+		&u.Email,
+		&u.Password.hash,
+		&u.Activated,
+		&u.Version,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, sql.ErrNoRows
 		default:
 			return nil, err
 		}
 	}
-
-	return user, nil
+	return &u, nil
 }
