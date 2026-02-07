@@ -54,6 +54,7 @@ func generateToken(userID int64, ttl time.Duration, scope string) (*Token, error
 }
 
 func (m *TokenModel) New(userID int64, ttl time.Duration, scope string) (*Token, error) {
+
 	token, err := generateToken(userID, ttl, scope)
 	if err != nil {
 		return nil, err
