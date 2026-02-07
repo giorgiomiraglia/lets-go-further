@@ -81,6 +81,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Request) {
+
 	var input struct {
 		PlainText string `json:"token"`
 	}
