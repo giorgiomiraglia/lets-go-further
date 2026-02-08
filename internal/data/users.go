@@ -258,7 +258,7 @@ func (m UserModel) GetForToken(scope, plainText string) (*User, error) {
 	if err != nil {
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
-			return nil, sql.ErrNoRows
+			return nil, ErrRecordNotFound
 		default:
 			return nil, err
 		}
