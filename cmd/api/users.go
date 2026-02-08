@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"errors"
 	"greenlight/internal/data"
 	"greenlight/internal/validator"
@@ -102,7 +101,7 @@ func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Reque
 	user, err := app.models.Users.GetForToken(data.ScopeActivation, input.PlainText)
 	if err != nil {
 		switch {
-		case errors.Is(err, sql.ErrNoRows):
+		case errors.Is(err, data.ErrRecordNotFound):
 			v.AddError("token", "invalid or expired token")
 			app.failedValidationResponse(w, r, v.Errors)
 		default:
@@ -125,7 +124,7 @@ func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// If a valid token is found, deletes them
+	// If a valid token is found, deletes it and all other with the same scope
 	err = app.models.Tokens.DeleteForAllUsers(data.ScopeActivation, user.ID)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
