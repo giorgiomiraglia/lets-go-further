@@ -36,7 +36,7 @@ type password struct {
 	hash      []byte
 }
 
-func (u *User) IsAnonyous() bool {
+func (u *User) IsAnonymous() bool {
 	return u == AnonymousUser
 }
 
