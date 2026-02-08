@@ -15,6 +15,8 @@ var (
 	ErrDuplicatedEmail = errors.New("duplicated email")
 )
 
+var AnonymousUser = &User{}
+
 type UserModel struct {
 	DB *sql.DB
 }
@@ -26,12 +28,16 @@ type User struct {
 	Email     string    `json:"email"`
 	Password  password  `json:"-"`
 	Activated bool      `json:"activated"`
-	Version   int       `json:"version"`
+	Version   int       `json:"-"`
 }
 
 type password struct {
 	plaintext *string
 	hash      []byte
+}
+
+func (u *User) IsAnonyous() bool {
+	return u == AnonymousUser
 }
 
 func (p *password) SetHash(plaintextPassword string) error {
