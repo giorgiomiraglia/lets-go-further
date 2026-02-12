@@ -52,6 +52,12 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	err = app.models.Permissions.AddForUser(u.ID, "movies:read")
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
 	t, err := app.models.Tokens.New(u.ID, 3*24*time.Hour, data.ScopeActivation)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
@@ -79,6 +85,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 
 }
 
+// Activates the user by validating the activation token
 func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	var input struct {
