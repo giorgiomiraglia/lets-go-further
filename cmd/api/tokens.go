@@ -8,6 +8,7 @@ import (
 	"time"
 )
 
+// Generates the user activation token
 func (app *application) createActivationTokenHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		Email string `json:"email"`
@@ -60,6 +61,7 @@ func (app *application) createActivationTokenHandler(w http.ResponseWriter, r *h
 	}
 }
 
+// Generates the user authentication token
 func (app *application) createAuthenticationTokenHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		Email    string `json:"email"`
