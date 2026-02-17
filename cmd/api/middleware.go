@@ -7,6 +7,7 @@ import (
 	"greenlight/internal/validator"
 	"net"
 	"net/http"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -189,4 +190,30 @@ func (app *application) requirePermission(code string, next http.HandlerFunc) ht
 
 	return app.requireActivatedUser(fn)
 
+}
+
+// enableCORS relaxes the same-origin policy of the API
+func (app *application) enableCORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Vary", "Origin")
+		w.Header().Set("Vary", "Access-Control-Request-Method")
+
+		origin := w.Header().Get("Origin")
+		if origin != "" {
+			if slices.Contains(app.config.cors.trustedOrigins, origin) {
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+
+				// If method is OPTIONS and has Access-Control-Request-Method, we assume it is a
+				// preflight request
+				if r.Method == http.MethodOptions && r.Header.Get("Access-Control-Request-Method") != "" {
+					w.Header().Set("Access-Control-Allow-Method", "OPTIONS, PUT, PATCH, DELETE")
+					w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+
+					w.WriteHeader(http.StatusOK)
+				}
+			}
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
