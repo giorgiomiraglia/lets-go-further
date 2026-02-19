@@ -163,7 +163,7 @@ func (app *application) requireActivatedUser(next http.HandlerFunc) http.Handler
 		user := app.contextGetUser(r)
 
 		if user.IsAnonymous() {
-			app.authenticationRequiredResponse(w, r)
+			app.inactiveAccountResponse(w, r)
 			return
 		}
 
