@@ -90,7 +90,7 @@ func main() {
 
 	db, err := openDB(cfg)
 	if err != nil {
-		logger.PrintError(err, nil)
+		logger.PrintFatal(err, nil)
 	}
 	defer db.Close()
 
